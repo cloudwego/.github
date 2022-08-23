@@ -17,10 +17,6 @@ linters-settings:
     # Choose whether to use the extra rules.
     # Default: false
     extra-rules: true
-  goimports:
-    # Put imports beginning with prefix after 3rd-party packages.
-    # It's a comma-separated list of prefixes.
-    local-prefixes: github.com/cloudwego/kitex
   govet:
     # Disable analyzers by name.
     # Run `go tool vet help` to see all analyzers.
@@ -29,7 +25,6 @@ linters-settings:
 linters:
   enable:
     - gofumpt
-    - goimports
     - gofmt
   disable:
     - errcheck
