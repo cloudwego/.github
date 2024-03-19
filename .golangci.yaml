@@ -25,6 +25,7 @@ linters-settings:
 linters:
   enable:
     - gofumpt
+    - goimports
     - gofmt
   disable:
     - errcheck
