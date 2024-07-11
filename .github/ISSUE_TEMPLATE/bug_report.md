@@ -27,9 +27,9 @@ A clear and concise description of what you expected to happen.
 
 If applicable, add screenshots to help explain your problem.
 
-**Kitex version:**
+**Version:**
 
-Please provide the version of Kitex you are using.
+Please provide the version of {project_name} you are using.
 
 **Environment:**
 
