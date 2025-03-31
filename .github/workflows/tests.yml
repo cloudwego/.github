@@ -13,7 +13,7 @@ jobs:
           go-version: stable
 
       - name: Unit Test
-        run: go test -race -covermode=atomic -coverprofile=coverage.out ./...
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
 
       - name: Benchmark
         run: go test -bench=. -benchmem -run=none ./...
@@ -21,7 +21,7 @@ jobs:
   compatibility-test:
     strategy:
       matrix:
-        go: [ "1.19", "1.20", "1.21", "1.22" ]
+        go: [ "1.19", oldstable ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
