@@ -1,9 +1,33 @@
 name: Pull Request Check
 
-on: [ pull_request ]
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - labeled
+      - reopened
 
 jobs:
-  compliant:
+  check-user-trust:
+    runs-on: ubuntu-latest
+    outputs:
+      is-trusted: ${{ steps.check.outputs.is_trusted }}
+    steps:
+      - name: Check if PR sender is trusted
+        id: check
+        run: |
+          ASSOC="${{ github.event.sender.author_association }}"
+          echo "Sender association: $ASSOC"
+          if [[ "$ASSOC" == "OWNER" || "$ASSOC" == "MEMBER" || "$ASSOC" == "COLLABORATOR" ]]; then
+            echo "trusted=true" >> $GITHUB_OUTPUT
+          else
+            echo "trusted=false" >> $GITHUB_OUTPUT
+          fi
+
+  compliant-check:
+    needs: check-user-trust
+    if: needs.check-user-trust.outputs.is_trusted == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,7 +40,9 @@ jobs:
       - name: Check Spell
         uses: crate-ci/typos@master
 
-  lint:
+  golangci-lint:
+    needs: check-user-trust
+    if: needs.check-user-trust.outputs.is_trusted == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,3 +60,4 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
+          only-new-issues: true
