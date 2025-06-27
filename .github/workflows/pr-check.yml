@@ -10,7 +10,7 @@ on:
 
 permissions:
   contents: read
-  pull-requests: none
+  pull-requests: read
 
 jobs:
   check-user-trust:
