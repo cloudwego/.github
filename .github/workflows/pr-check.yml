@@ -10,7 +10,7 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
+  pull-requests: none
 
 jobs:
   check-user-trust:
@@ -48,6 +48,8 @@ jobs:
     needs: check-user-trust
     if: needs.check-user-trust.outputs.is_trusted == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - name: Set up Go
