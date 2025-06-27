@@ -1,9 +1,37 @@
 name: Pull Request Check
 
-on: [ pull_request ]
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - labeled
+      - reopened
+
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
-  compliant:
+  check-user-trust:
+    runs-on: ubuntu-latest
+    outputs:
+      is-trusted: ${{ steps.check.outputs.is_trusted }}
+    steps:
+      - name: Check if PR sender is trusted
+        id: check
+        run: |
+          ASSOC="${{ github.event.sender.author_association }}"
+          echo "Sender association: $ASSOC"
+          if [[ "$ASSOC" == "OWNER" || "$ASSOC" == "MEMBER" || "$ASSOC" == "COLLABORATOR" ]]; then
+            echo "trusted=true" >> $GITHUB_OUTPUT
+          else
+            echo "trusted=false" >> $GITHUB_OUTPUT
+          fi
+
+  compliant-check:
+    needs: check-user-trust
+    if: needs.check-user-trust.outputs.is_trusted == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,8 +44,12 @@ jobs:
       - name: Check Spell
         uses: crate-ci/typos@master
 
-  lint:
+  golangci-lint:
+    needs: check-user-trust
+    if: needs.check-user-trust.outputs.is_trusted == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - name: Set up Go
@@ -34,3 +66,38 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
+          only-new-issues: true
+
+  unit-benchmark-test:
+    needs: check-user-trust
+    if: needs.check-user-trust.outputs.is_trusted == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Unit Test
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Benchmark
+        run: go test -bench=. -benchmem -run=none ./...
+
+  compatibility-test:
+    needs: check-user-trust
+    if: needs.check-user-trust.outputs.is_trusted == 'true'
+    strategy:
+      matrix:
+        go: [ "1.19", oldstable ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+          cache: true # don't use cache for self-hosted runners
+      - name: Unit Test
+        run: go test -race -covermode=atomic ./...
